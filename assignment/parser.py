@@ -8,6 +8,8 @@ class MyParser(Parser):
     tokens = MyLexer.tokens
     debugfile = 'parser.out'
 
+
+  #TODO - grammar needs update
 # statements : statements statement #
 #         | statement #
 # statement : command #
