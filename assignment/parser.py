@@ -8,6 +8,7 @@ class MyParser(Parser):
     tokens = MyLexer.tokens
     debugfile = 'parser.out'
     tree =dict(root=[])
+    statementlist = []
 
 
   #TODO - grammar needs update
@@ -41,17 +42,20 @@ class MyParser(Parser):
     @_('statements')
     def program(self,p):
         print('statements --> program')
-        self.tree['root']=list(p[0])
+        self.tree['root']=self.statementlist
         return self.tree
     @_('statements statement')
     def statements(self, p):
         print('statements statement --> statements')
-        return p[0],p[1]
+        if len(self.statementlist) > 0:
+            self.statementlist.append(p[1])
+        return self.statementlist
 
     @_('statement')
     def statements(self, p):
         print('statement --> statements')
-        return p[0]
+        self.statementlist.append(p[0])
+        return self.statementlist
 
     @_('command')
     def statement(self, p):
@@ -73,7 +77,7 @@ class MyParser(Parser):
         print('IF conditional THEN statements FI --> statement')
         return dict(IF=p[1],THEN=p[3])
 
-    @_('assignment')
+    @_('assignments')
     def statement(self, p):
         print('assignment --> statement')
         return p[0]
