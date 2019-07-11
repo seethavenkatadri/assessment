@@ -1,11 +1,12 @@
 from sly import Parser
-
+import pprint
 from cisco.assignment.lexer import MyLexer
 
 
 class MyParser(Parser):
     # Get the token list from the lexer
     tokens = MyLexer.tokens
+    debugfile = 'parser.out'
 
 # statements : statements statement #
 #         | statement #
@@ -19,9 +20,10 @@ class MyParser(Parser):
 #         | WORD #
 # command : ECHO DQUOTE words DQUOTE #
 #         | ECHO words #
-#         | assignments SCRPTARG #
+#         | ECHO command #
+#         | assignments SCRPTARG  #
 #         | DATE format   #
-# format : PLUS PERCENT WORD #
+# format : PLUS PERCENT NUMBER WORD #
 # assignment :  WORD ASSIGN NUMBER #
 #         | assignment SCOLON #
 #         | WORD ASSIGN BTICK command BTICK #
@@ -33,141 +35,110 @@ class MyParser(Parser):
 # quoted : DQUOTE WORD DQUOTE #
 # comparison : LPAREN quoted COMPARE quoted RPAREN #
 
-
     @_('statements')
     def program(self,p):
-        print('call 1 \n')
-        return p[0]
+        print('statements --> program')
+        return dict(start=p[0])
     @_('statements statement')
     def statements(self, p):
-        print('call 2 \n')
+        print('statements statement --> statements')
         return (p[0],p[1])
 
     @_('statement')
     def statements(self, p):
-        print('call 3 \n')
+        print('statement --> statements')
         return (p[0])
 
     @_('command')
     def statement(self, p):
-        print('call 4 \n')
+        print('command --> statement')
         return (p[0])
-
-    @_('conditional')
-    def statement(self, p):
-        print('call 4.1 \n')
-        return (p[0])
-
-    @_('IF statement THEN statements FI')
-    def statement(self, p):
-        print('call 5 \n')
-        return ('check',p[1],'then execute',p[3])
-
-    @_('assignments')
-    def statement(self, p):
-        print('call 6 \n')
-        return (p[0])
-
-    @_('ECHO DQUOTE words DQUOTE')
-    def command(self, p):
-        print('call 7 \n')
-        return ('print',p[2])
-
-    @_('ECHO words')
-    def command(self, p):
-        print('call 8 \n')
-        return ('print', p[1])
-
-    @_('assignments SCRPTARG')
-    def command(self, p):
-        print('call 9 \n')
-        return ('set values before execute',p[0], 'execute with args', p[1])
-
-    @_('DATE format')
-    def command(self, p):
-        print('call 10 \n')
-        return ('execution time', p[0])
 
     @_('WORD')
     def words(self, p):
-        print('call 11 \n')
+        print('WORD --> words')
         return (p[0])
 
-    @_('words WORD')
-    def words(self, p):
-        print('call 12 \n')
-        return (p[0] , p[1])
+    @_('PRINT')
+    def statement(self, p):
+        print('PRINT --> statement --',p[0])
+        return dict(print=p[0])
 
-    @_('words SCRPTARG')
-    def words(self, p):
-        print('call 13 \n')
-        return (p[0] , p[1])
+    @_('IF conditional THEN statements FI')
+    def statement(self, p):
+        print('IF conditional THEN statements FI --> statement')
+        return dict(checkif=p[1],execute=p[3])
 
-    @_('words COLON')
-    def words(self, p):
-        print('call 14 \n')
-        return (p[0] , p[1])
+    @_('assignment')
+    def statement(self, p):
+        print('assignment --> statement')
+        return (p[0])
 
-    @_('words VALUEOF LCURLY WORD RCURLY')
-    def words(self, p):
-        print('call 15 \n')
-        return (p[0] , p[3])
+    @_('LET statement')
+    def statement(self, p):
+        print('LET statement --> statement')
+        return (p[1])
 
-    @_('assignments assignment')
-    def assignments(self, p):
-        print('call 16 \n')
-        return (p[0] , p[1])
+    @_('DATE format')
+    def command(self, p):
+        print('DATE format --> command')
+        return dict(etime=p[0],format=p[1])
+
+    @_('assignments SCRPTARG')
+    def command(self, p):
+        print('assignments SCRPTARG --> command')
+        return ('set values before execute', p[0], 'execute with args', p[1])
 
     @_('assignment')
     def assignments(self, p):
-        print('call 17 \n')
+        print('assignment --> assignments')
         return (p[0])
 
-    @_('WORD ASSIGN NUMBER')
+    @_('assignment NUMBER')
     def assignment(self, p):
-        print('call 18 \n')
-        return ('assign', p[0] , p[2])
+        print('assignment NUMBER --> assignment')
+        return ('assign', p[0] , p[1])
 
-    @_('WORD ASSIGN BTICK command BTICK')
+    @_('WORD ASSIGN')
     def assignment(self, p):
-        print('call 19 \n')
+        print('WORD ASSIGN --> assignment')
+        return dict(assign=p[0])
+
+    @_('assignment BTICK command BTICK')
+    def assignment(self, p):
+        print('assignment BTICK command BTICK --> assignment')
         return ('assign', p[0], p[2])
 
-    @_('WORD ASSIGN VALUEOF QMARK')
+    @_('assignment VALUEOF QMARK')
     def assignment(self, p):
-        print('call 20 \n')
+        print('assignment VALUEOF QMARK --> assignment')
         return ('assign', p[0], 'execution code')
 
     @_('assignment SCOLON')
     def assignment(self, p):
-        print('call 21 \n')
+        print('assignment SCOLON --> assignment')
         return (p[0])
-
-    @_('LET WORD ASSIGN NUMBER SCOLON')
-    def assignment(self, p):
-        print('call 22 \n')
-        return ('assign',p[1],p[3])
 
     @_('LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON')
     def conditional(self, p):
-        print('call 23 \n')
+        print('LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON --> conditional')
         return ('and',p[2],p[4])
 
-    @_('DQUOTE WORD DQUOTE')
+    @_('DQUOTE words DQUOTE')
     def quoted(self, p):
-        print('call 24 \n')
-        return (p[1])
+        print('DQUOTE words DQUOTE --> quoted')
+        return str(p[1])
 
     @_('LPAREN quoted COMPARE quoted RPAREN')
     def comparison(self,p):
-        print('call 25 \n')
-        return ('is equal to',p[1],p[3])
+        print('LPAREN quoted COMPARE quoted RPAREN --> comparison')
+        return dict(compare=(p[1],p[3]))
 
-    @_('PLUS PERCENT WORD')
+    @_('PLUS PERCENT NUMBER WORD')
     def format(self,p):
-        print('call 26 \n')
-        if p[2] == 's':
-            return ('in seconds since 1970-01-01 00:00:00 UTC')
+        print('PLUS PERCENT NUMBER WORD --> format')
+        if p[3] == 's':
+            return ('in seconds')
 
 if __name__ == '__main__':
     data = """# comment
@@ -187,4 +158,4 @@ if __name__ == '__main__':
     parser = MyParser()
 
     result = parser.parse(lexer.tokenize(data))
-    print(result or 'Nothing to print')
+    pprint.pprint(result,width=2)
