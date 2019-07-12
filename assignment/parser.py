@@ -10,10 +10,13 @@ class MyParser(Parser):
     tree = dict(root=[])
     currNode = {}
     currParent = ['root']
+    nodeChanged = False
+    branchCount=0
 
     def addStatement(self,s):
         print('currParent:',self.currParent)
         curr=self.currParent[-1]
+        print('curr:',curr)
         if curr == 'root':
             print('self.tree:', self.tree)
             print('statement:', s)
@@ -21,13 +24,21 @@ class MyParser(Parser):
             self.tree[curr].append(s)
             print('after append self.tree[curr]:', self.tree[curr])
         else:
-            print('self.currNode[curr]:', self.currNode[curr])
-            print('statement:', s)
-            print('before append self.currNode[curr]:', self.currNode[curr])
-            self.currNode[curr].append(s)
-            print('after append self.currNode[curr]:', self.currNode[curr])
+            if not self.nodeChanged:
+                print('self.currNode[curr]:', self.currNode[curr])
+                print('statement:', s)
+                print('currNode:', self.currNode)
+                print('before append self.currNode[curr]:', self.currNode[curr])
+                self.currNode[curr].append(s)
+                print('after append self.currNode[curr]:', self.currNode[curr])
+            else:
+                self.nodeChanged=False
 
     def attachNode(self):
+        print('attaching Node')
+        curr = self.currParent[-1]
+        print('curr:', curr)
+        print('tree:',self.tree)
         self.tree[self.currParent[-1]].append(self.currNode)
 
 #TODO - grammar needs update
@@ -61,7 +72,6 @@ class MyParser(Parser):
     @_('statements')
     def program(self,p):
         print('statements --> program')
-        self.attachNode()
         return self.tree
 
     @_('statements statement')
@@ -93,12 +103,20 @@ class MyParser(Parser):
     @_('IF conditional THEN')
     def statement(self, p):
         print('IF conditional--> statement')
-        self.currNode=dict(IF=[],condition=p[1])
-        return self.currNode
+        self.branchCount += 1
+        key='IF'+str(self.branchCount)
+        temp={}
+        temp[key]=[]
+        temp['condition']=p[1]
+        self.currNode= temp
+        self.currParent.append(key)
+        self.nodeChanged=True
+        return temp
 
     @_('FI')
     def statement(self, p):
         print('FI --> statement')
+        self.currParent.pop()
         self.attachNode()
 
     @_('assignments')
@@ -196,7 +214,9 @@ if __name__ == '__main__':
               RET_VAL=$?
               I_E_T=`date +%25s`
               fi
-            Y=2"""
+            if [[ ("thing" == "are") && ( "some" == "some" ) ]];then
+            Y=2
+            fi"""
     lexer = MyLexer()
     parser = MyParser()
 
