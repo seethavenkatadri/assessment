@@ -7,41 +7,29 @@ class MyParser(Parser):
     # Get the token list from the lexer
     tokens = MyLexer.tokens
     debugfile = 'parser.out'
-    tree = dict(root=[])
-    currNode = {}
-    currParent = ['root']
+
+    ## Starting conditions
+    tree = dict(root=[])  ## one main tree for the AST
+    currNode = {}   ## one temp node for every branch the execution takes
+    currParent = ['root'] ## to remember the path that the program has taken
+    branchCount = 0 ## count to differentiate multiple Ifs
+
     nodeChanged = False
-    branchCount=0
 
     def addStatement(self,s):
-        print('currParent:',self.currParent)
         curr=self.currParent[-1]
-        print('curr:',curr)
         if curr == 'root':
-            if not self.nodeChanged:
-                print('self.tree:', self.tree)
-                print('statement:', s)
-                print('before append self.tree[curr]:',self.tree[curr])
+            if self.nodeChanged:
+                self.nodeChanged = False
+            else:
                 self.tree[curr].append(s)
-                print('after append self.tree[curr]:', self.tree[curr])
-            else:
-                self.nodeChanged=False
         else:
-            if not self.nodeChanged:
-                print('self.currNode[curr]:', self.currNode[curr])
-                print('statement:', s)
-                print('currNode:', self.currNode)
-                print('before append self.currNode[curr]:', self.currNode[curr])
-                self.currNode[curr].append(s)
-                print('after append self.currNode[curr]:', self.currNode[curr])
+            if self.nodeChanged:
+                self.nodeChanged = False
             else:
-                self.nodeChanged=False
+                self.currNode[curr].append(s)
 
     def attachNode(self):
-        print('attaching Node')
-        curr = self.currParent[-1]
-        print('curr:', curr)
-        print('tree:',self.tree)
         self.tree[self.currParent[-1]].append(self.currNode)
 
 #TODO - grammar needs update
@@ -74,133 +62,109 @@ class MyParser(Parser):
 
     @_('statements')
     def program(self,p):
-        print('statements --> program')
         return self.tree
 
     @_('statements statement')
     def statements(self, p):
-        print('statements statement --> statements')
         self.addStatement(p[1])
 
     @_('statement')
     def statements(self, p):
-        print('statement --> statements')
         self.addStatement(p[0])
 
     @_('command')
     def statement(self, p):
-        print('command --> statement')
         return p[0]
 
     @_('WORD')
     def words(self, p):
-        print('WORD --> words')
         return p[0]
 
     @_('PRINT')
     def statement(self, p):
-        print('PRINT --> statement --',p[0])
-        tempNode=dict(print=p[0])
-        return tempNode
+        return dict(print=p[0])
 
     @_('IF conditional THEN')
     def statement(self, p):
-        print('IF conditional--> statement')
+        ### Start a new branch
         self.branchCount += 1
         key='IF'+str(self.branchCount)
         temp={}
         temp[key]=[]
         temp['condition']=p[1]
-        self.currNode= temp
+        self.currNode=temp
         self.currParent.append(key)
         self.nodeChanged=True
         return temp
 
     @_('FI')
     def statement(self, p):
-        print('FI --> statement')
+        ## Finish processing a IF branch
+        ## and move back to the main branch
         self.currParent.pop()
         self.attachNode()
         self.nodeChanged = True
 
     @_('assignments')
     def statement(self, p):
-        print('assignment --> statement')
         return p[0]
 
     @_('LET statement')
     def statement(self, p):
-        print('LET statement --> statement')
         return p[1]
 
     @_('DATE format')
     def command(self, p):
-        print('DATE format --> command')
-        return dict(etime=p[0],format=p[1])
+        return dict(command=p[0],format=p[1])
 
     @_('assignments SCRPTARG')
     def command(self, p):
-        print('assignments SCRPTARG --> command')
-        tempNode=dict(exec=p[1])
-        return tempNode
+        return dict(exec=p[1])
 
     @_('assignment')
     def assignments(self, p):
-        print('assignment --> assignments')
         return p[0]
 
     @_('assignment NUMBER')
     def assignment(self, p):
-        print('assignment NUMBER --> assignment')
         temp={}
         temp[p[0]]=p[1]
         return dict(assign=temp)
 
     @_('WORD ASSIGN')
     def assignment(self, p):
-        print('WORD ASSIGN --> assignment')
         return p[0]
 
     @_('assignment BTICK command BTICK')
     def assignment(self, p):
-        print('assignment BTICK command BTICK --> assignment')
         temp = {}
         temp[p[0]] = p[2]
         return dict(assign=temp)
 
     @_('assignment VALUEOF QMARK')
     def assignment(self, p):
-        print('assignment VALUEOF QMARK --> assignment')
         temp={}
         temp[p[0]] = p[1]+ p[2]
         return dict(assign=temp)
 
     @_('assignment SCOLON')
     def assignment(self, p):
-        print('assignment SCOLON --> assignment')
         return p[0]
 
     @_('LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON')
     def conditional(self, p):
-        print('LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON --> conditional')
-        temp = dict(AND=[])
-        temp['AND'].append(p[2])
-        temp['AND'].append(p[4])
-        return temp
+        return dict(AND=[p[2],p[4]])
 
     @_('DQUOTE words DQUOTE')
     def quoted(self, p):
-        print('DQUOTE words DQUOTE --> quoted')
         return p[1]
 
     @_('LPAREN quoted COMPARE quoted RPAREN')
     def comparison(self,p):
-        print('LPAREN quoted COMPARE quoted RPAREN --> comparison')
         return dict(lhs=p[1],rhs=p[3])
 
     @_('PLUS PERCENT NUMBER WORD')
     def format(self,p):
-        print('PLUS PERCENT NUMBER WORD --> format')
         if p[3] == 's':
             return ('in seconds')
 
