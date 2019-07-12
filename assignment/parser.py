@@ -18,11 +18,14 @@ class MyParser(Parser):
         curr=self.currParent[-1]
         print('curr:',curr)
         if curr == 'root':
-            print('self.tree:', self.tree)
-            print('statement:', s)
-            print('before append self.tree[curr]:',self.tree[curr])
-            self.tree[curr].append(s)
-            print('after append self.tree[curr]:', self.tree[curr])
+            if not self.nodeChanged:
+                print('self.tree:', self.tree)
+                print('statement:', s)
+                print('before append self.tree[curr]:',self.tree[curr])
+                self.tree[curr].append(s)
+                print('after append self.tree[curr]:', self.tree[curr])
+            else:
+                self.nodeChanged=False
         else:
             if not self.nodeChanged:
                 print('self.currNode[curr]:', self.currNode[curr])
@@ -118,6 +121,7 @@ class MyParser(Parser):
         print('FI --> statement')
         self.currParent.pop()
         self.attachNode()
+        self.nodeChanged = True
 
     @_('assignments')
     def statement(self, p):
