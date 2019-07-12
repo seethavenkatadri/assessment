@@ -7,11 +7,30 @@ class MyParser(Parser):
     # Get the token list from the lexer
     tokens = MyLexer.tokens
     debugfile = 'parser.out'
-    tree =dict(root=[])
-    statementlist = []
+    tree = dict(root=[])
+    currNode = {}
+    currParent = ['root']
 
+    def addStatement(self,s):
+        print('currParent:',self.currParent)
+        curr=self.currParent[-1]
+        if curr == 'root':
+            print('self.tree:', self.tree)
+            print('statement:', s)
+            print('before append self.tree[curr]:',self.tree[curr])
+            self.tree[curr].append(s)
+            print('after append self.tree[curr]:', self.tree[curr])
+        else:
+            print('self.currNode[curr]:', self.currNode[curr])
+            print('statement:', s)
+            print('before append self.currNode[curr]:', self.currNode[curr])
+            self.currNode[curr].append(s)
+            print('after append self.currNode[curr]:', self.currNode[curr])
 
-  #TODO - grammar needs update
+    def attachNode(self):
+        self.tree[self.currParent[-1]].append(self.currNode)
+
+#TODO - grammar needs update
 # statements : statements statement #
 #         | statement #
 # statement : command #
@@ -42,20 +61,18 @@ class MyParser(Parser):
     @_('statements')
     def program(self,p):
         print('statements --> program')
-        self.tree['root']=self.statementlist
+        self.attachNode()
         return self.tree
+
     @_('statements statement')
     def statements(self, p):
         print('statements statement --> statements')
-        if len(self.statementlist) > 0:
-            self.statementlist.append(p[1])
-        return self.statementlist
+        self.addStatement(p[1])
 
     @_('statement')
     def statements(self, p):
         print('statement --> statements')
-        self.statementlist.append(p[0])
-        return self.statementlist
+        self.addStatement(p[0])
 
     @_('command')
     def statement(self, p):
@@ -70,12 +87,19 @@ class MyParser(Parser):
     @_('PRINT')
     def statement(self, p):
         print('PRINT --> statement --',p[0])
-        return dict(print=p[0])
+        tempNode=dict(print=p[0])
+        return tempNode
 
-    @_('IF conditional THEN statements FI')
+    @_('IF conditional THEN')
     def statement(self, p):
-        print('IF conditional THEN statements FI --> statement')
-        return dict(IF=p[1],THEN=p[3])
+        print('IF conditional--> statement')
+        self.currNode=dict(IF=[],condition=p[1])
+        return self.currNode
+
+    @_('FI')
+    def statement(self, p):
+        print('FI --> statement')
+        self.attachNode()
 
     @_('assignments')
     def statement(self, p):
@@ -95,7 +119,8 @@ class MyParser(Parser):
     @_('assignments SCRPTARG')
     def command(self, p):
         print('assignments SCRPTARG --> command')
-        return dict(EXEC=p[1],ARGS=p[0])
+        tempNode=dict(exec=p[1])
+        return tempNode
 
     @_('assignment')
     def assignments(self, p):
