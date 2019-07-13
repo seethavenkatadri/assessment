@@ -32,28 +32,28 @@ class MyParser(Parser):
     def attachNode(self):
         self.tree[self.currParent[-1]].append(self.currNode)
 
-    # program : statements
-    # statements : statements statement
-    #		    | statement
-    # statement : command
-    #	        | ECHOLINE
-    #	        | IF conditionals THEN
-    #	        | FI
-    #	        | assignments
-    #	        | LET statement
-    # command : DATE format
-    #	        | assignments SCRPTARG
-    # assignments:assignment
-    # assignment: assignment NUMBER
-    #		    | WORD assign
-    #		    | assignment BTICK command BTICK
-    #		    | assignment VALUEOF QMARK
-    #		    | assignment SCOLON
-    # conditional : LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON
-    # words : WORD
-    # quoted: DQUOTE words DQUOTE
-    # comparison: LPAREN quoted COMPARE quoted RPAREN
-    # format : PLUS PERCENT NUMBER WORD
+# program : statements
+# statements : statements statement
+#		    | statement
+# statement : command
+#	        | ECHOLINE
+#	        | IF conditionals THEN
+#	        | FI
+#	        | assignments
+#	        | LET statement
+# command : DATE format
+#	        | assignments SCRPTARG
+# assignments:assignment
+# assignment: assignment NUMBER
+#		    | WORD assign
+#		    | assignment BTICK command BTICK
+#		    | assignment VALUEOF QMARK
+#		    | assignment SCOLON
+# conditional : LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON
+# words : WORD
+# quoted: DQUOTE words DQUOTE
+# comparison: LPAREN quoted COMPARE quoted RPAREN
+# format : PLUS PERCENT NUMBER WORD
 
 
 
