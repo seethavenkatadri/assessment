@@ -171,6 +171,10 @@ class MyParser(Parser):
         if p[3] == 's':
             return ('in seconds')
 
+    def error(self, p):
+        print("Syntax error at token", p.value , " at line:", p.lineno, "(type=", p.type, "), omitting statement..")
+
+
 if __name__ == '__main__':
     data = """# comment
            let \
