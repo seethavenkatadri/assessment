@@ -32,33 +32,34 @@ class MyParser(Parser):
     def attachNode(self):
         self.tree[self.currParent[-1]].append(self.currNode)
 
-#TODO - grammar needs update
-# statements : statements statement #
-#         | statement #
-# statement : command #
-#         | assignments #
-#         | IF conditional THEN statements FI #
-# words : words WORD #
-#         | words SCRPTARG #
-#         | words COLON  #
-#         | words VALUEOF LCURLY WORD RCURLY  #
-#         | WORD #
-# command : ECHO DQUOTE words DQUOTE #
-#         | ECHO words #
-#         | ECHO command #
-#         | assignments SCRPTARG  #
-#         | DATE format   #
-# format : PLUS PERCENT NUMBER WORD #
-# assignment :  WORD ASSIGN NUMBER #
-#         | assignment SCOLON #
-#         | WORD ASSIGN BTICK command BTICK #
-#         | WORD ASSIGN VALUEOF QMARK #
-#         | LET assignment
-# assignments : assignments assignment #
-#         | assignment #
-# conditional : LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON #
-# quoted : DQUOTE WORD DQUOTE #
-# comparison : LPAREN quoted COMPARE quoted RPAREN #
+    # program : statements
+    # statements : statements statement
+    #		    | statement
+    # statement : command
+    #	        | ECHOLINE
+    #	        | IF conditionals THEN
+    #	        | FI
+    #	        | assignments
+    #	        | LET statement
+    # command : DATE format
+    #	        | assignments SCRPTARG
+    # assignments:assignment
+    # assignment: assignment NUMBER
+    #		    | WORD assign
+    #		    | assignment BTICK command BTICK
+    #		    | assignment VALUEOF QMARK
+    #		    | assignment SCOLON
+    # conditional : LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON
+    # words : WORD
+    # quoted: DQUOTE words DQUOTE
+    # comparison: LPAREN quoted COMPARE quoted RPAREN
+    # format : PLUS PERCENT NUMBER WORD
+
+
+
+
+
+
 
     @_('statements')
     def program(self,p):
@@ -76,11 +77,7 @@ class MyParser(Parser):
     def statement(self, p):
         return p[0]
 
-    @_('WORD')
-    def words(self, p):
-        return p[0]
-
-    @_('PRINT')
+    @_('ECHOLINE')
     def statement(self, p):
         return dict(print=p[0])
 
@@ -115,7 +112,7 @@ class MyParser(Parser):
 
     @_('DATE format')
     def command(self, p):
-        return dict(command=p[0],format=p[1])
+        return dict(command=p[0], format=p[1])
 
     @_('assignments SCRPTARG')
     def command(self, p):
@@ -127,25 +124,27 @@ class MyParser(Parser):
 
     @_('assignment NUMBER')
     def assignment(self, p):
-        temp={}
-        temp[p[0]]=p[1]
-        return dict(assign=temp)
+        key=[x for x in p[0]['assign'].keys()]
+        p[0]['assign'][key[0]] = p[1]
+        return p[0]
 
     @_('WORD ASSIGN')
     def assignment(self, p):
-        return p[0]
+        temp={}
+        temp[p[0]]=''
+        return dict(assign=temp)
 
     @_('assignment BTICK command BTICK')
     def assignment(self, p):
-        temp = {}
-        temp[p[0]] = p[2]
-        return dict(assign=temp)
+        key = [x for x in p[0]['assign'].keys()]
+        p[0]['assign'][key[0]] = p[2]
+        return p[0]
 
     @_('assignment VALUEOF QMARK')
     def assignment(self, p):
-        temp={}
-        temp[p[0]] = p[1]+ p[2]
-        return dict(assign=temp)
+        key = [x for x in p[0]['assign'].keys()]
+        p[0]['assign'][key[0]] = p[1]+ p[2]
+        return p[0]
 
     @_('assignment SCOLON')
     def assignment(self, p):
@@ -154,6 +153,10 @@ class MyParser(Parser):
     @_('LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON')
     def conditional(self, p):
         return dict(AND=[p[2],p[4]])
+
+    @_('WORD')
+    def words(self, p):
+        return p[0]
 
     @_('DQUOTE words DQUOTE')
     def quoted(self, p):
@@ -182,9 +185,7 @@ if __name__ == '__main__':
               RET_VAL=$?
               I_E_T=`date +%25s`
               fi
-            if [[ ("thing" == "are") && ( "some" == "some" ) ]];then
-            Y=2
-            fi"""
+            """
     lexer = MyLexer()
     parser = MyParser()
 
