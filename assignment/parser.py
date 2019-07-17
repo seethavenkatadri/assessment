@@ -6,53 +6,28 @@ from cisco.assignment.lexer import MyLexer
 class MyParser(Parser):
     # Get the token list from the lexer
     tokens = MyLexer.tokens
-    #debugfile = 'parser.out'
+    debugfile = 'parser.out'
 
-    ## Starting conditions
-    tree = dict(root=[])  ## one main tree for the AST
-    currNode = {}   ## one temp node for every branch the execution takes
-    currParent = ['root'] ## to remember the path that the program has taken
-    branchCount = 0 ## count to differentiate multiple Ifs
-
-    nodeChanged = False
-
-    # def addStatement(self,s):
-    #     curr=self.currParent[-1]
-    #     if curr == 'root':
-    #         if self.nodeChanged:
-    #             self.nodeChanged = False
-    #         else:
-    #             self.tree[curr].append(s)
-    #     else:
-    #         if self.nodeChanged:
-    #             self.nodeChanged = False
-    #         else:
-    #             self.currNode[curr].append(s)
-    #
-    # def attachNode(self):
-    #     self.tree[self.currParent[-1]].append(self.currNode)
 
 # program : statements
 # statements : statements statement
 #		    | statement
-# statement : command
-#	        | ECHOLINE
-#	        | IF conditionals THEN
-#	        | FI
+# statement : ECHOLINE
+#	        | IF conditionals THEN statements FI
+#           | IF conditionals THEN statements ELSE statements FI
 #	        | assignments
 #	        | LET statement
-# command : DATE format
-#	        | assignments SCRPTARG
+#           | DATE format
+#           | assignments SCRPTARG
 # assignments:assignment
+#           | assignments assignment
 # assignment: assignment NUMBER
 #		    | WORD assign
-#		    | assignment BTICK command BTICK
+#		    | assignment BTICK statement BTICK
 #		    | assignment VALUEOF QMARK
 #		    | assignment SCOLON
 # conditional : LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON
-# words : WORD
-# quoted: DQUOTE words DQUOTE
-# comparison: LPAREN quoted COMPARE quoted RPAREN
+# comparison: LPAREN STRING COMPARE STRING RPAREN
 # format : PLUS PERCENT NUMBER WORD
 
 
@@ -88,11 +63,6 @@ class MyParser(Parser):
         print('3..')
         return p[0]
 
-    @_('command')
-    def statement(self, p):
-        print('4..')
-        return p[0]
-
     @_('ECHOLINE')
     def statement(self, p):
         print('5..')
@@ -102,6 +72,11 @@ class MyParser(Parser):
     def statement(self, p):
         print('6..')
         return dict(operation='IF',condition=p[1],stlist=p[3])
+
+    @_('IF conditional THEN statements ELSE statements FI')
+    def statement(self, p):
+        print('6.1..')
+        return dict(operation='IF', condition=p[1], ifstlist=p[3],elsestlist=p[5])
 
     @_('assignments')
     def statement(self, p):
@@ -114,11 +89,11 @@ class MyParser(Parser):
         return p[1]
 
     @_('DATE format')
-    def command(self, p):
+    def statement(self, p):
         print('9..')
         return dict(operation=p[0], format=p[1])
 
-    @_('statement SCRPTARG')
+    @_('assignments SCRPTARG')
     def statement(self, p):
         print('10..')
         return dict(operation='exec',script=p[1])
@@ -127,6 +102,23 @@ class MyParser(Parser):
     def assignments(self, p):
         print('11..')
         return p[0]
+
+    @_('assignments assignment')
+    def assignments(self, p):
+        print('11.1..')
+        templist = []
+        if isinstance(p[0], dict) and isinstance(p[1], dict):
+            templist.append(p[0].copy())
+            templist.append(p[1].copy())
+            return templist
+        elif isinstance(p[0], list) and isinstance(p[1], dict):
+            templist = p[0]
+            templist.append(p[1].copy())
+            return templist
+        elif isinstance(p[0], type(None)) and isinstance(p[1], dict):
+            return p[1]
+        elif isinstance(p[0], dict) and isinstance(p[1], type(None)):
+            return p[0]
 
     @_('assignment NUMBER')
     def assignment(self, p):
@@ -140,7 +132,7 @@ class MyParser(Parser):
         temp=dict(lhs=p[0],rhs='')
         return dict(operation='assign',operands=temp)
 
-    @_('assignment BTICK command BTICK')
+    @_('assignment BTICK statement BTICK')
     def assignment(self, p):
         print('14..')
         p[0]['operands']['rhs'] = p[2]
@@ -162,17 +154,7 @@ class MyParser(Parser):
         print('17..')
         return dict(operation='AND',operands=[p[2],p[4]])
 
-    @_('WORD')
-    def words(self, p):
-        print('18..')
-        return p[0]
-
-    @_('DQUOTE words DQUOTE')
-    def quoted(self, p):
-        print('19..')
-        return p[1]
-
-    @_('LPAREN quoted COMPARE quoted RPAREN')
+    @_('LPAREN STRING COMPARE STRING RPAREN')
     def comparison(self,p):
         print('20..')
         temp=dict(lhs=p[1], rhs=p[3])
@@ -207,6 +189,8 @@ if __name__ == '__main__':
               fi
               if [[ ( "ha" == "magic" ) && ( "is" == "here" ) ]]; then
               X=89
+              else
+              k=3
               fi
               h=90"""
     lexer = MyLexer()
