@@ -7,7 +7,6 @@ class MyParser(Parser):
     # Get the token list from the lexer
     tokens = MyLexer.tokens
 
-
 # program : statements
 # statements : statements statement
 #		    | statement
@@ -30,7 +29,7 @@ class MyParser(Parser):
 
     @_('statements')
     def program(self,p):
-        return dict(operation='start',stlist=p[0])
+        return dict(node='start',stlist=p[0])
 
     @_('statements statement')
     def statements(self, p):
@@ -54,15 +53,15 @@ class MyParser(Parser):
 
     @_('ECHOLINE')
     def statement(self, p):
-        return dict(operation='print',args=p[0])
+        return dict(node='print',args=p[0])
 
     @_('IF conditions THEN statements FI')
     def statement(self, p):
-        return dict(operation='IF',condition=p[1],stlist=p[3])
+        return dict(node='IF',condition=p[1],stlist=p[3])
 
     @_('IF conditions THEN statements ELSE statements FI')
     def statement(self, p):
-        return dict(operation='IF', condition=p[1], ifstlist=p[3],elsestlist=p[5])
+        return dict(node='IF', condition=p[1], ifstlist=p[3],elsestlist=p[5])
 
     @_('assignments')
     def statement(self, p):
@@ -74,7 +73,7 @@ class MyParser(Parser):
 
     @_('assignments SCRPTARG')
     def statement(self, p):
-        return dict(operation='exec',script=p[1])
+        return dict(node='exec',script=p[1])
 
     @_('assignment')
     def assignments(self, p):
@@ -88,7 +87,7 @@ class MyParser(Parser):
     @_('IDENTIFIER ASSIGN')
     def assignment(self, p):
         temp=dict(lhs=p[0],rhs='')
-        return dict(operation='assign',operands=temp)
+        return dict(node='assign',operands=temp)
 
     @_('assignment BTICK command BTICK')
     def assignment(self, p):
@@ -106,16 +105,16 @@ class MyParser(Parser):
 
     @_('LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON')
     def conditions(self, p):
-        return dict(operation='AND',operands=[p[2],p[4]])
+        return dict(node='AND',operands=[p[2],p[4]])
 
     @_('LPAREN STRING COMPARE STRING RPAREN')
     def comparison(self,p):
         temp=dict(lhs=p[1], rhs=p[3])
-        return dict(operation='isequalto',operands=temp)
+        return dict(node='isequalto',operands=temp)
 
     @_('DATE FORMAT')
     def command(self,p):
-        return dict(operation=p[0], format=p[1])
+        return dict(node=p[0], format=p[1])
 
     def error(self, p):
         print("Syntax error at token", p.value , " at line:", p.lineno, "(type=", p.type, "), omitting statement..")
@@ -133,8 +132,13 @@ if __name__ == '__main__':
               echo Executing Imaging script: I_V_P=1 I_D_T= O_B=1 ../build/c.f/gi i/f/f_t_c.d
               I_V_P=1 I_D_T= F_P_V=1 O_B=1 ../build/c.f/gi i/f/f_t_c.d
               RET_VAL=$?
+              if [[ ( "here" == "magic" ) && ( "some" == "some" ) ]]; then
               I_E_T=`date +%25s`
+              else
+              Z=5
               fi
+              fi
+              Y=3
               """
     lexer = MyLexer()
     parser = MyParser()
