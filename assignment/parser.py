@@ -64,12 +64,24 @@ class MyParser(Parser):
     @_('statements')
     def program(self,p):
         print('1..')
-        return p[0]
+        return dict(operation='start',stlist=p[0])
 
     @_('statements statement')
     def statements(self, p):
         print('2..')
-        return p[0],p[1]
+        templist=[]
+        if isinstance(p[0],dict) and isinstance(p[1],dict):
+            templist.append(p[0].copy())
+            templist.append(p[1].copy())
+            return templist
+        elif isinstance(p[0],list) and isinstance(p[1],dict):
+            templist=p[0]
+            templist.append(p[1].copy())
+            return templist
+        elif isinstance(p[0],type(None)) and isinstance(p[1],dict):
+            return p[1]
+        elif isinstance(p[0],dict) and isinstance(p[1],type(None)):
+            return p[0]
 
     @_('statement')
     def statements(self, p):
@@ -84,19 +96,12 @@ class MyParser(Parser):
     @_('ECHOLINE')
     def statement(self, p):
         print('5..')
-        return dict(print=p[0])
+        return dict(operation='print',args=p[0])
 
     @_('IF conditional THEN statements FI')
     def statement(self, p):
         print('6..')
-        ### Start a new branch
-        self.branchCount += 1
-        key='IF'+str(self.branchCount)
-        temp={}
-        temp[key]=[]
-        temp['condition']=p[1]
-        temp['stlist'] = p[3]
-        return temp
+        return dict(operation='IF',condition=p[1],stlist=p[3])
 
     @_('assignments')
     def statement(self, p):
@@ -111,12 +116,12 @@ class MyParser(Parser):
     @_('DATE format')
     def command(self, p):
         print('9..')
-        return dict(command=p[0], format=p[1])
+        return dict(operation=p[0], format=p[1])
 
-    @_('assignments SCRPTARG')
-    def command(self, p):
+    @_('statement SCRPTARG')
+    def statement(self, p):
         print('10..')
-        return dict(exec=p[1])
+        return dict(operation='exec',script=p[1])
 
     @_('assignment')
     def assignments(self, p):
@@ -126,29 +131,25 @@ class MyParser(Parser):
     @_('assignment NUMBER')
     def assignment(self, p):
         print('12..')
-        key=[x for x in p[0]['assign'].keys()]
-        p[0]['assign'][key[0]] = p[1]
+        p[0]['operands']['rhs'] = p[1]
         return p[0]
 
     @_('WORD ASSIGN')
     def assignment(self, p):
         print('13..')
-        temp={}
-        temp[p[0]]=''
-        return dict(assign=temp)
+        temp=dict(lhs=p[0],rhs='')
+        return dict(operation='assign',operands=temp)
 
     @_('assignment BTICK command BTICK')
     def assignment(self, p):
         print('14..')
-        key = [x for x in p[0]['assign'].keys()]
-        p[0]['assign'][key[0]] = p[2]
+        p[0]['operands']['rhs'] = p[2]
         return p[0]
 
     @_('assignment VALUEOF QMARK')
     def assignment(self, p):
         print('15..')
-        key = [x for x in p[0]['assign'].keys()]
-        p[0]['assign'][key[0]] = p[1]+ p[2]
+        p[0]['operands']['rhs'] = p[1]+ p[2]
         return p[0]
 
     @_('assignment SCOLON')
@@ -159,7 +160,7 @@ class MyParser(Parser):
     @_('LSQUARE LSQUARE comparison AND comparison RSQUARE RSQUARE SCOLON')
     def conditional(self, p):
         print('17..')
-        return dict(AND=[p[2],p[4]])
+        return dict(operation='AND',operands=[p[2],p[4]])
 
     @_('WORD')
     def words(self, p):
@@ -175,7 +176,7 @@ class MyParser(Parser):
     def comparison(self,p):
         print('20..')
         temp=dict(lhs=p[1], rhs=p[3])
-        return dict(isequalto=temp)
+        return dict(operation='isequalto',operands=temp)
 
     @_('PLUS PERCENT NUMBER WORD')
     def format(self,p):
